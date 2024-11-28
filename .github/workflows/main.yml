@@ -1,4 +1,4 @@
-name: Build JavaFX Application
+name: Build, Deploy and Generate Website
 
 on:
   push:
@@ -16,6 +16,21 @@ jobs:
       # Checkout the code
       - name: Checkout repository
         uses: actions/checkout@v3
+
+      # Fetch tags for versioning
+      - name: Fetch tags
+        run: git fetch --tags
+
+      # Determine the new version number
+      - name: Increment version
+        id: version
+        uses: paulhatch/semantic-version@v4
+        with:
+          major_pattern: '^MAJOR:'
+          minor_pattern: '^MINOR:'
+          patch_pattern: '^PATCH:'
+          default_bump: patch
+          tag_prefix: 'v'
 
       # Set up Java
       - name: Set up JDK 23.0.1
@@ -43,21 +58,41 @@ jobs:
           mkdir -p executables
           mv target/*.jar executables/
 
-      # Push the executables folder to the repository
-      - name: Commit and push executables folder
+      # Create and push a new Git tag for the version
+      - name: Push new version tag
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add executables/
-          git commit -m "Add generated JAR files to executables folder"
-          git push
+          git tag ${{ steps.version.outputs.version }}
+          git push origin ${{ steps.version.outputs.version }}
 
+      # Create GitHub Release
       - name: Create GitHub Release
         uses: ncipollo/release-action@v1
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          tag: v1.0.0
-          releaseName: "JavaFX Application v1.0.0"
+          tag: ${{ steps.version.outputs.version }}
+          releaseName: "JavaFX Application ${{ steps.version.outputs.version }}"
           draft: false
           prerelease: false
           artifacts: executables/*.jar
+
+      # Generate a webpage for downloading the JAR file
+      - name: Generate Download Page
+        run: |
+          mkdir -p download-page
+          echo "<html>" > download-page/index.html
+          echo "<head><title>Download JavaFX Application</title></head>" >> download-page/index.html
+          echo "<body>" >> download-page/index.html
+          echo "<h1>JavaFX Application</h1>" >> download-page/index.html
+          echo "<p>Download the latest version of the JavaFX application:</p>" >> download-page/index.html
+          echo "<a href='https://github.com/${{ github.repository }}/releases/download/${{ steps.version.outputs.version }}/$(ls executables)'>Download JAR</a>" >> download-page/index.html
+          echo "</body>" >> download-page/index.html
+          echo "</html>" >> download-page/index.html
+
+      # Deploy the webpage to GitHub Pages
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: download-page
