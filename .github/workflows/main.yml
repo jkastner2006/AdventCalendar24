@@ -51,3 +51,13 @@ jobs:
           git add executables/
           git commit -m "Add generated JAR files to executables folder"
           git push
+
+      - name: Create GitHub Release
+        uses: ncipollo/release-action@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          tag: v1.0.0
+          releaseName: "JavaFX Application v1.0.0"
+          draft: false
+          prerelease: false
+          artifacts: executables/*.jar
