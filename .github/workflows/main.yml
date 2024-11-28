@@ -61,7 +61,6 @@ jobs:
           # Ensure the target directory contains the JAR
           mv target/*.jar target/${VERSION}.jar
 
-
       - name: Move versioned JAR to executables folder
         run: |
           VERSION=${{ steps.version.outputs.version }}
@@ -75,6 +74,27 @@ jobs:
 
       - name: Set version as environment variable
         run: echo "VERSION=${{ steps.version.outputs.version }}" >> $GITHUB_ENV
+
+
+      # Create and push a new Git tag for the version
+      - name: Push new version tag
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag ${{ steps.version.outputs.version }}
+          git push origin ${{ steps.version.outputs.version }}
+
+      # Create GitHub Release
+      - name: Create GitHub Release
+        uses: ncipollo/release-action@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          tag: ${{ steps.version.outputs.version }}
+          releaseName: "JavaFX Application ${{ steps.version.outputs.version }}"
+          draft: false
+          prerelease: false
+          artifacts: executables/*.jar
+
 
   deploy:
     runs-on: ubuntu-latest
