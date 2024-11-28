@@ -17,8 +17,6 @@ public class Application extends javafx.application.Application {
 
         FXMLLoader fxmlLoader = new FXMLLoader(Application.class.getResource("hello-view.fxml"));
 
-
-
         GridPane grid = new GridPane();
         grid.setAlignment(Pos.CENTER);
         grid.setHgap(10);
@@ -33,8 +31,6 @@ public class Application extends javafx.application.Application {
             });
             grid.add(button, (i - 1) % 6, (i - 1) / 6);
         }
-
-
 
 
         Scene scene = new Scene(grid, 600, 600);
