@@ -12,6 +12,9 @@ jobs:
   build:
     runs-on: ubuntu-latest
 
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+
     steps:
       # Checkout the code
       - name: Checkout repository
@@ -58,24 +61,31 @@ jobs:
           mkdir -p executables
           mv target/*.jar executables/
 
-      # Create and push a new Git tag for the version
-      - name: Push new version tag
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git tag ${{ steps.version.outputs.version }}
-          git push origin ${{ steps.version.outputs.version }}
-
-      # Create GitHub Release
-      - name: Create GitHub Release
-        uses: ncipollo/release-action@v1
+      # Upload artifacts for sharing between jobs
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v3
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          tag: ${{ steps.version.outputs.version }}
-          releaseName: "JavaFX Application ${{ steps.version.outputs.version }}"
-          draft: false
-          prerelease: false
-          artifacts: executables/*.jar
+          name: jar-files
+          path: executables/
+
+      # Output the generated version for use in downstream jobs
+      - name: Output version
+        run: echo "version=${{ steps.version.outputs.version }}" >> $GITHUB_ENV
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build
+
+    steps:
+      # Checkout the repository
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      # Download the build artifacts
+      - name: Download build artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: jar-files
 
       # Generate a webpage for downloading the JAR file
       - name: Generate Download Page
@@ -86,7 +96,7 @@ jobs:
           echo "<body>" >> download-page/index.html
           echo "<h1>JavaFX Application</h1>" >> download-page/index.html
           echo "<p>Download the latest version of the JavaFX application:</p>" >> download-page/index.html
-          echo "<a href='https://github.com/${{ github.repository }}/releases/download/${{ steps.version.outputs.version }}/$(ls executables)'>Download JAR</a>" >> download-page/index.html
+          echo "<a href='https://github.com/${{ github.repository }}/releases/download/${{ needs.build.outputs.version }}/$(ls executables)'>Download JAR</a>" >> download-page/index.html
           echo "</body>" >> download-page/index.html
           echo "</html>" >> download-page/index.html
 
