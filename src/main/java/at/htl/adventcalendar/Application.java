@@ -29,7 +29,8 @@ public class Application extends javafx.application.Application {
             button.setPrefSize(100, 100);
             button.setOnAction(event -> {
                 button.setText("🎁");
-                button.setDisable(true); });
+                button.setDisable(true);
+            });
             grid.add(button, (i - 1) % 6, (i - 1) / 6);
         }
 
@@ -43,6 +44,6 @@ public class Application extends javafx.application.Application {
     }
 
     public static void main(String[] args) {
-        launch();
+        launch(args);
     }
 }

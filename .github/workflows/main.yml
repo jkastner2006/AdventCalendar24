@@ -35,10 +35,10 @@ jobs:
         with:
           tag_prefix: 'v'
 
-      - name: Set up JDK 23.0.1
+      - name: Set up JDK 23.0.1 oracle
         uses: actions/setup-java@v3
         with:
-          distribution: 'temurin'
+          distribution: 'oracle'
           java-version: '23.0.1'
 
       - name: Cache Maven dependencies
@@ -52,7 +52,13 @@ jobs:
       - name: Build with Maven
         run: mvn clean package
 
-      - name: Move JAR to executables folder
+      - name: Rename JAR to versioned file
+        run: |
+          VERSION=${{ steps.version.outputs.version }}
+          # Rename the JAR to include the version (e.g., v1.0.0.jar)
+          mv target/*.jar target/${VERSION}.jar
+
+      - name: Move versioned JAR to executables folder
         run: |
           mkdir -p executables
           mv target/*.jar executables/
@@ -63,7 +69,7 @@ jobs:
           name: jar-files
           path: executables/
 
-      - name: Output version
+      - name: Set version as environment variable
         run: echo "VERSION=${{ steps.version.outputs.version }}" >> $GITHUB_ENV
 
   deploy:
@@ -87,7 +93,8 @@ jobs:
           echo "<body>" >> download-page/index.html
           echo "<h1>JavaFX Application</h1>" >> download-page/index.html
           echo "<p>Download the latest version of the JavaFX application:</p>" >> download-page/index.html
-          echo "<a href='https://github.com/${{ github.repository }}/releases/download/${{ env.VERSION }}/$(ls executables)'>Download JAR</a>" >> download-page/index.html
+          # The URL should point to the release asset with the correct version
+          echo "<a href='https://github.com/${{ github.repository }}/releases/download/${{ env.VERSION }}/${{ env.VERSION }}.jar'>Download JAR</a>" >> download-page/index.html
           echo "</body>" >> download-page/index.html
           echo "</html>" >> download-page/index.html
 
