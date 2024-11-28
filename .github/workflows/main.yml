@@ -52,14 +52,15 @@ jobs:
       - name: Build with Maven
         run: mvn clean package
 
+      - name: Create executables directory
+        run: mkdir executables
+
       - name: Rename JAR to versioned file
         run: |
           VERSION=${{ steps.version.outputs.version }}
           # Ensure the target directory contains the JAR
           mv target/*.jar target/${VERSION}.jar
 
-      - name: Create executables directory
-        run: mkdir -p executables
 
       - name: Move versioned JAR to executables folder
         run: |
@@ -90,6 +91,7 @@ jobs:
 
       - name: Generate Download Page
         run: |
+          VERSION=${{ steps.version.outputs.version }}
           mkdir -p download-page
           echo "<html>" > download-page/index.html
           echo "<head><title>Download JavaFX Application</title></head>" >> download-page/index.html
@@ -97,7 +99,7 @@ jobs:
           echo "<h1>JavaFX Application</h1>" >> download-page/index.html
           echo "<p>Download the latest version of the JavaFX application:</p>" >> download-page/index.html
           # Correct URL for downloading JAR
-          echo "<a href='https://github.com/${{ github.repository }}/releases/download/${{ env.VERSION }}/${{ env.VERSION }}.jar'>Download JAR</a>" >> download-page/index.html
+          echo "<a href='https://github.com/${{ github.repository }}/releases/download/${{ VERSION }}/${{ VERSION }}.jar'>Download JAR</a>" >> download-page/index.html
           echo "</body>" >> download-page/index.html
           echo "</html>" >> download-page/index.html
 
